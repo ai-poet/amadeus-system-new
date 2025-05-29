@@ -52,7 +52,7 @@ def generate_sys_prompt(
     if model is None:
         model = AI_MODEL
     
-    output_format_section = f"<Output_language>{text_lang_text}</Output_language>"
+    output_format_section = f"<Output_language>{voice_lang_text}</Output_language>"
     
     # 使用 datetime 生成当前时间
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')

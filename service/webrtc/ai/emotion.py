@@ -34,7 +34,7 @@ async def predict_emotion(message, client=None):
         
         # 准备请求数据
         data = {
-            "model": "gpt-4o-mini-2024-07-18",
+            "model": "gpt-4.1-nano",
             "messages": [
                 {
                     "role": "system",

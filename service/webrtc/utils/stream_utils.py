@@ -16,8 +16,9 @@ import queue
 from collections import deque
 
 from .async_utils import run_async
+from tts.speech import translate_text
 
-def split_text_by_punctuation(text, min_segment_length=5):
+def split_text_by_punctuation(text, min_segment_length=15):
     """
     根据标点符号分割文本，并确保每个分段具有最小长度
     
@@ -79,7 +80,7 @@ def split_text_by_punctuation(text, min_segment_length=5):
 
 # 创建线程池执行器
 _thread_pool = ThreadPoolExecutor(max_workers=4)
-_tts_pool = ThreadPoolExecutor(max_workers=2)  # 专门用于TTS转换的线程池
+_tts_pool = ThreadPoolExecutor(max_workers=4)  # 专门用于TTS转换的线程池
 
 # 使用共享队列存储TTS音频块，实现真正的流式传输
 _audio_chunk_queue = queue.Queue()
@@ -102,7 +103,7 @@ def run_emotion_analysis_in_thread(run_predict_emotion, text, client):
         logging.error(f"情感分析出错: {e}")
         return None
 
-def run_tts_in_thread(text_to_speech_stream, segment, voice, target_language, source_language, segment_id):
+def run_tts_in_thread(text_to_speech_stream, segment, voice, segment_id):
     """
     在线程池中运行TTS转换，并将音频块实时添加到共享队列
     
@@ -110,8 +111,6 @@ def run_tts_in_thread(text_to_speech_stream, segment, voice, target_language, so
         text_to_speech_stream: TTS函数
         segment: 要转换的文本段落
         voice: 语音配置
-        target_language: 目标语言
-        source_language: 源语言
         segment_id: 段落ID，用于标识音频块所属段落
         
     返回:
@@ -119,9 +118,7 @@ def run_tts_in_thread(text_to_speech_stream, segment, voice, target_language, so
     """
     try:
         for audio_chunk in text_to_speech_stream(segment, 
-                                            voice=voice,
-                                            target_language=target_language,
-                                            source_language=source_language):
+                                            voice=voice):
             # 直接将音频块放入共享队列，实现实时流式传输
             _audio_chunk_queue.put((segment_id, audio_chunk))
     except Exception as e:
@@ -194,7 +191,7 @@ def process_llm_stream(
     text_to_speech_stream=None,
     max_tokens=None,
     max_context_length=None,
-    min_segment_length=5,  # 添加最小片段长度参数
+    min_segment_length=15,  # 添加最小片段长度参数
 ):
     """
     处理 LLM 的流式响应，使用统一的处理逻辑并支持基于标点符号的分段
@@ -217,6 +214,7 @@ def process_llm_stream(
         生成器，产生音频块和额外输出
     """
     full_response = ""
+    full_response_for_client_segments = [] # New initialization
     current_buffer = ""
     processed_length = 0
     
@@ -248,12 +246,7 @@ def process_llm_stream(
     # 标记LLM是否完成
     llm_completed = False
     
-    for text_chunk, current_full_response in ai_stream(client, messages, model=model, max_tokens=max_tokens, max_context_length=max_context_length):
-        # 发送流式LLM响应片段到前端
-        stream_json = json.dumps({"type": "llm_stream", "data": text_chunk})
-        logging.info(f"stream_json: {stream_json}")
-        yield AdditionalOutputs(stream_json)
-        
+    for text_chunk, current_full_response in ai_stream(client, messages, model=model, max_tokens=max_tokens, max_context_length=max_context_length):        
         full_response = current_full_response
         current_buffer += text_chunk
         
@@ -290,18 +283,46 @@ def process_llm_stream(
                     # 为段落生成唯一ID
                     segment_id = f"segment_{time.time()}_{len(segment)}"
                     segment_order.append(segment_id)
-                    
-                    # 启动TTS转换，结果会直接放入共享队列
+
+                    # Submit TTS to _tts_pool early
                     _tts_pool.submit(
                         run_tts_in_thread,
                         text_to_speech_stream,
-                        segment,
+                        segment, # Original segment for TTS
                         siliconflow_config.get("voice"),
-                        voice_output_language,
-                        text_output_language,
                         segment_id
                     )
-                    # 标记该段落正在处理TTS
+                    # Mark this segment's TTS as pending
+                    pending_tts_tasks[segment_id] = True
+
+                    translated_segment = None
+                    if voice_output_language and text_output_language and voice_output_language != text_output_language:
+                        if segment.strip(): # Ensure there's text to translate
+                            translation_future = _thread_pool.submit(translate_text, segment, target_language=text_output_language, source_language=voice_output_language)
+                            try:
+                                translated_segment = translation_future.result(timeout=5) # Wait for this specific translation with a timeout
+                            except Exception as e:
+                                logging.error(f"Translation for segment failed or timed out: {e}")
+                                translated_segment = None # Ensure it's None if error or timeout
+                    
+                    # 决定要在流式事件中发送的文本：如果有翻译就用翻译，否则用原文
+                    stream_text = translated_segment if (translated_segment and translated_segment.strip()) else segment
+                    
+                    event_data = {"type": "llm_stream", "data": stream_text}
+                    # 如果进行了翻译，也保留原文作为参考
+                    if translated_segment and translated_segment.strip():
+                        event_data["original"] = segment
+                    # Yield llm_stream event
+                    logging.info(f"Yielding llm_stream event_data: {event_data}")
+                    yield AdditionalOutputs(json.dumps(event_data))
+
+                    # Append to full_response_for_client_segments
+                    if translated_segment and translated_segment.strip():
+                        full_response_for_client_segments.append(translated_segment)
+                    else:
+                        full_response_for_client_segments.append(segment)
+                    
+                    # 标记该段落正在处理TTS (already done above)
                     pending_tts_tasks[segment_id] = True
                     
                     # 立即检查是否有新的音频块可用
@@ -325,20 +346,49 @@ def process_llm_stream(
     
     # 处理最后可能剩余的内容
     if current_buffer.strip():
+        last_segment_text = current_buffer.strip() # Use a new variable for clarity
         last_segment_id = f"last_segment_{time.time()}"
         segment_order.append(last_segment_id)
-        
-        # 启动最后一个TTS转换
+
+        # Submit TTS to _tts_pool early for the last segment
         _tts_pool.submit(
             run_tts_in_thread,
             text_to_speech_stream,
-            current_buffer,
+            last_segment_text, # Use the stripped text
             siliconflow_config.get("voice"),
-            voice_output_language,
-            text_output_language,
             last_segment_id
         )
-        # 标记该段落正在处理TTS
+        # Mark this segment's TTS as pending
+        pending_tts_tasks[last_segment_id] = True
+
+        translated_last_segment = None
+        if voice_output_language and text_output_language and voice_output_language != text_output_language:
+            if last_segment_text: # Ensure there's text to translate
+                translation_future = _thread_pool.submit(translate_text, last_segment_text, target_language=text_output_language, source_language=voice_output_language)
+                try:
+                    translated_last_segment = translation_future.result(timeout=5) # Wait for this specific translation with a timeout
+                except Exception as e:
+                    logging.error(f"Translation for last segment failed or timed out: {e}")
+                    translated_last_segment = None # Ensure it's None if error or timeout
+
+        # 决定要在流式事件中发送的文本：如果有翻译就用翻译，否则用原文
+        stream_text = translated_last_segment if (translated_last_segment and translated_last_segment.strip()) else last_segment_text
+        
+        event_data = {"type": "llm_stream", "data": stream_text}
+        # 如果进行了翻译，也保留原文作为参考
+        if translated_last_segment and translated_last_segment.strip():
+            event_data["original"] = last_segment_text
+        # Yield final llm_stream event
+        logging.info(f"Yielding final llm_stream event_data: {event_data}")
+        yield AdditionalOutputs(json.dumps(event_data))
+
+        # Append to full_response_for_client_segments for the final segment
+        if translated_last_segment and translated_last_segment.strip():
+            full_response_for_client_segments.append(translated_last_segment)
+        else:
+            full_response_for_client_segments.append(last_segment_text)
+
+        # 标记该段落正在处理TTS (already done above)
         pending_tts_tasks[last_segment_id] = True
     
     # 在LLM完成后立即进行情感分析，不等待TTS
@@ -356,7 +406,29 @@ def process_llm_stream(
             logging.error(f"情感分析出错: {e}")
     
     # 将文本包装成JSON对象，表示这是LLM返回的完整响应
-    llm_response_json = json.dumps({"type": "llm_response", "data": f"{full_response}"})
+    final_full_response_for_client = "".join(full_response_for_client_segments)
+    
+    # 对完整响应进行统一翻译（如果需要翻译）
+    unified_translation = None
+    if voice_output_language and text_output_language and voice_output_language != text_output_language:
+        if full_response.strip():  # 确保有内容需要翻译
+            try:
+                logging.info(f"开始对完整响应进行统一翻译，原文长度: {len(full_response)}")
+                translation_future = _thread_pool.submit(translate_text, full_response, target_language=text_output_language, source_language=voice_output_language)
+                unified_translation = translation_future.result(timeout=10)  # 给统一翻译更长的超时时间
+                logging.info(f"统一翻译完成，译文长度: {len(unified_translation) if unified_translation else 0}")
+            except Exception as e:
+                logging.error(f"统一翻译失败: {e}")
+                unified_translation = None
+    
+    # 构建llm_response事件数据
+    llm_response_data = {"type": "llm_response", "data": final_full_response_for_client}
+    if unified_translation and unified_translation.strip():
+        llm_response_data["data"] = unified_translation
+        llm_response_data["original"] = full_response
+    
+    llm_response_json = json.dumps(llm_response_data)
+    logging.info(f"Yielding llm_response event_data: {llm_response_json}")
     yield AdditionalOutputs(llm_response_json)
     
     # 继续处理TTS
