@@ -131,7 +131,7 @@ docker build -t amadeus-webrtc-service .
 
 ```bash
 docker run -d --name amadeus-webrtc \
-  -p 80:80 -p 443:443 -p 3478:3478 -p 5349:5349 -p 49152-65535:49152-65535/udp \
+  -p 8001:8001 \
   -e LLM_API_KEY=你的OpenAI_API密钥 \
   -e WHISPER_API_KEY=你的Whisper_API密钥 \
   -e SILICONFLOW_API_KEY=你的硅基流动API密钥 \
@@ -145,6 +145,8 @@ docker run -d --name amadeus-webrtc \
   -e CONCURRENCY_LIMIT=你的最大并发连接数 \
   amadeus-webrtc-service
 ```
+
+这样部署后，你就可以通过 http://你的服务器IP:8001 访问你自己的WebRTC服务了。
 
 #### WebRTC服务环境变量说明
 
