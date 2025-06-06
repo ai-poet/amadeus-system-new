@@ -1,6 +1,8 @@
 # Amadeus System New Alpha
 
-一个全新的实验版本, EL PSY CONGROO~
+[English](README_EN.md) | 中文
+
+一个全新的Amadeus实验版本, EL PSY CONGROO~
 
 注意，此版本已经经过重构，和初版已经不同，文档已经更新，请查看文档。
 
@@ -139,7 +141,7 @@ docker run -d --name amadeus-webrtc \
   -e LLM_BASE_URL=你的大语言模型API的基础URL \
   -e WHISPER_BASE_URL=你的Whisper API的基础URL \
   -e WHISPER_MODEL=你的Whisper模型版本 \
-  -e AI_MODEL=你的大语言模型名称 \
+  -e AI_MODEL=大语言模型型号 \
   -e MEM0_API_KEY=你的MEM0记忆服务API密钥 \
   -e TIME_LIMIT=你的WebRTC流的最大时间限制(秒) \
   -e CONCURRENCY_LIMIT=你的最大并发连接数 \
@@ -161,7 +163,7 @@ docker run -d --name amadeus-webrtc \
 | `LLM_BASE_URL` | 大语言模型API的基础URL | 无 |
 | `WHISPER_BASE_URL` | Whisper API的基础URL | 无 |
 | `WHISPER_MODEL` | 使用的Whisper模型版本 | 无 |
-| `AI_MODEL` | 使用的大语言模型名称 | 无 |
+| `AI_MODEL` | 使用的大语言模型型号 | 无 |
 | `MEM0_API_KEY` | MEM0记忆服务的API密钥 | 无 |
 | `TIME_LIMIT` | WebRTC流的最大时间限制(秒) | 600 |
 | `CONCURRENCY_LIMIT` | 最大并发连接数 | 10 |
