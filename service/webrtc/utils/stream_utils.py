@@ -117,15 +117,27 @@ def run_tts_in_thread(text_to_speech_stream, segment, voice, segment_id):
         None (结果通过队列传递)
     """
     try:
-        for audio_chunk in text_to_speech_stream(segment, 
-                                            voice=voice):
+        logging.info(f"开始TTS转换 - 段落ID: {segment_id}, 文本长度: {len(segment)}, 文本预览: {segment[:50]}...")
+        
+        chunk_count = 0
+        start_time = time.time()
+        
+        for audio_chunk in text_to_speech_stream(segment, voice=voice):
+            chunk_count += 1
             # 直接将音频块放入共享队列，实现实时流式传输
-            _audio_chunk_queue.put((segment_id, audio_chunk))
+            # 添加时间戳和块序号以便调试
+            chunk_with_meta = (audio_chunk[0], audio_chunk[1])  # (sample_rate, audio_array)
+            _audio_chunk_queue.put((segment_id, chunk_with_meta))
+            
+        end_time = time.time()
+        logging.info(f"TTS转换完成 - 段落ID: {segment_id}, 生成音频块数量: {chunk_count}, 耗时: {end_time - start_time:.2f}秒")
+        
     except Exception as e:
-        logging.error(f"TTS转换出错: {e}, 文本: {segment[:30]}...")
+        logging.error(f"TTS转换出错 - 段落ID: {segment_id}, 错误: {e}, 文本: {segment[:30]}...")
     finally:
         # 添加一个None标记表示这个段落的TTS已经完成
         _audio_chunk_queue.put((segment_id, None))
+        logging.info(f"TTS任务结束标记已发送 - 段落ID: {segment_id}")
 
 def check_and_process_tts_tasks(
     pending_tts_tasks, 
@@ -135,6 +147,9 @@ def check_and_process_tts_tasks(
 ):
     """检查并处理已完成的TTS任务，从共享队列获取音频块"""
     # 从共享队列中获取所有可用的音频块
+    temp_chunks = []  # 临时存储新获取的音频块
+    completed_segments = []  # 记录完成的段落
+    
     while not _audio_chunk_queue.empty():
         try:
             segment_id, audio_chunk = _audio_chunk_queue.get_nowait()
@@ -143,19 +158,43 @@ def check_and_process_tts_tasks(
             if audio_chunk is None:
                 if segment_id in pending_tts_tasks:
                     pending_tts_tasks.pop(segment_id, None)
+                    completed_segments.append(segment_id)
             else:
-                # 将音频块添加到输出队列
-                audio_queue.append((segment_id, audio_chunk))
+                # 将音频块暂存到临时列表
+                temp_chunks.append((segment_id, audio_chunk))
         except queue.Empty:
             break
+    
+    # 记录完成的段落
+    if completed_segments:
+        logging.info(f"TTS完成的段落: {completed_segments}, 剩余待处理段落: {list(pending_tts_tasks.keys())}")
+    
+    # 按照segment_order对新获取的音频块进行排序，然后添加到队列
+    if temp_chunks:
+        # 创建一个映射，将segment_id映射到它在segment_order中的位置
+        segment_position = {seg_id: idx for idx, seg_id in enumerate(segment_order)}
+        
+        # 按照在segment_order中的位置对音频块进行排序
+        temp_chunks.sort(key=lambda x: segment_position.get(x[0], float('inf')))
+        
+        # 记录音频块信息
+        chunk_info = [(seg_id, f"pos_{segment_position.get(seg_id, 'unknown')}") for seg_id, _ in temp_chunks]
+        logging.info(f"处理音频块: {chunk_info}, 当前队列长度: {len(audio_queue)}")
+        
+        # 将排序后的音频块添加到输出队列
+        for segment_id, audio_chunk in temp_chunks:
+            audio_queue.append((segment_id, audio_chunk))
     
     return None
 
 def yield_ready_audio_chunks(audio_queue, segment_order, current_output_segment_id, force_all=False):
     """按照段落顺序输出准备好的音频块"""
     # 如果当前没有正在输出的段落，取第一个
-    if current_output_segment_id is None and segment_order:
-        current_output_segment_id = segment_order[0]
+    if current_output_segment_id[0] is None and segment_order:
+        current_output_segment_id[0] = segment_order[0]
+        logging.info(f"开始输出第一个段落: {current_output_segment_id[0]}")
+    
+    yielded_count = 0
     
     # 处理队列中的音频块
     while audio_queue:
@@ -163,20 +202,32 @@ def yield_ready_audio_chunks(audio_queue, segment_order, current_output_segment_
         segment_id, chunk = audio_queue[0]
         
         # 如果是当前输出段落的块或强制输出所有内容，则yield出去
-        if force_all or segment_id == current_output_segment_id:
+        if force_all or segment_id == current_output_segment_id[0]:
             audio_queue.popleft()  # 从队列中移除
+            yielded_count += 1
             yield (segment_id, chunk)
         else:
-            # 不是当前段落的块，先不输出
+            # 不是当前段落的块，记录等待状态
+            if not force_all:
+                logging.info(f"等待当前段落 {current_output_segment_id[0]} 完成，队首段落: {segment_id}")
             break
         
         # 如果当前段落的所有块都已输出，并且队列为空或队首是新段落
-        if not audio_queue or audio_queue[0][0] != current_output_segment_id:
+        if not audio_queue or audio_queue[0][0] != current_output_segment_id[0]:
             # 移动到下一个段落
-            if segment_order and current_output_segment_id in segment_order:
-                idx = segment_order.index(current_output_segment_id)
+            if segment_order and current_output_segment_id[0] in segment_order:
+                idx = segment_order.index(current_output_segment_id[0])
                 if idx + 1 < len(segment_order):
-                    current_output_segment_id = segment_order[idx + 1]
+                    old_segment_id = current_output_segment_id[0]
+                    current_output_segment_id[0] = segment_order[idx + 1]
+                    logging.info(f"切换到下一个段落: {old_segment_id} -> {current_output_segment_id[0]}")
+                else:
+                    logging.info(f"当前段落 {current_output_segment_id[0]} 是最后一个段落")
+    
+    if yielded_count > 0:
+        logging.info(f"本次输出了 {yielded_count} 个音频块，剩余队列长度: {len(audio_queue)}")
+    
+    return None
 
 def process_llm_stream(
     client, 
@@ -234,8 +285,8 @@ def process_llm_stream(
     # 为了确保流顺序，维护一个处理顺序列表
     segment_order: List[str] = []
     
-    # 当前正在输出的段落ID
-    current_output_segment_id = None
+    # 当前正在输出的段落ID - 使用列表以便在函数间传递状态
+    current_output_segment_id = [None]
     
     # 最后一个段落的ID
     last_segment_id = None
@@ -245,6 +296,10 @@ def process_llm_stream(
     
     # 标记LLM是否完成
     llm_completed = False
+    
+    # 添加延迟机制，避免音频块挤在一起
+    last_audio_yield_time = 0
+    min_audio_interval = 0.01  # 最小音频块间隔 10ms
     
     for text_chunk, current_full_response in ai_stream(client, messages, model=model, max_tokens=max_tokens, max_context_length=max_context_length):        
         full_response = current_full_response
@@ -266,13 +321,18 @@ def process_llm_stream(
                 current_output_segment_id
             )
             
-            # 输出准备好的音频块
+            # 输出准备好的音频块，添加间隔控制
             for output in yield_ready_audio_chunks(audio_queue, segment_order, current_output_segment_id):
                 if isinstance(output, AdditionalOutputs):
                     yield output
                 else:
-                    current_output_segment_id = output[0]
+                    # 控制音频块输出间隔，避免挤在一起
+                    current_time = time.time()
+                    if current_time - last_audio_yield_time < min_audio_interval:
+                        time.sleep(min_audio_interval - (current_time - last_audio_yield_time))
+                    
                     yield output[1]  # 实际音频块
+                    last_audio_yield_time = time.time()
         
         if len(segments) > 1:  # 如果有多个分段
             segments_to_process = segments[:-1]
@@ -333,13 +393,18 @@ def process_llm_stream(
                         current_output_segment_id
                     )
                     
-                    # 立即输出就绪的音频块
+                    # 立即输出就绪的音频块，添加间隔控制
                     for output in yield_ready_audio_chunks(audio_queue, segment_order, current_output_segment_id):
                         if isinstance(output, AdditionalOutputs):
                             yield output
                         else:
-                            current_output_segment_id = output[0]
+                            # 控制音频块输出间隔，避免挤在一起
+                            current_time = time.time()
+                            if current_time - last_audio_yield_time < min_audio_interval:
+                                time.sleep(min_audio_interval - (current_time - last_audio_yield_time))
+                            
                             yield output[1]  # 实际音频块
+                            last_audio_yield_time = time.time()
     
     # LLM已完成生成，标记完成状态
     llm_completed = True
@@ -442,25 +507,35 @@ def process_llm_stream(
             current_output_segment_id
         )
         
-        # 输出准备好的音频块
+        # 输出准备好的音频块，添加间隔控制
         for output in yield_ready_audio_chunks(audio_queue, segment_order, current_output_segment_id):
             if isinstance(output, AdditionalOutputs):
                 yield output
             else:
-                current_output_segment_id = output[0]
+                # 控制音频块输出间隔，避免挤在一起
+                current_time = time.time()
+                if current_time - last_audio_yield_time < min_audio_interval:
+                    time.sleep(min_audio_interval - (current_time - last_audio_yield_time))
+                
                 yield output[1]  # 实际音频块
+                last_audio_yield_time = time.time()
         
         # 如果仍有未完成的任务，等待一小段时间
         if pending_tts_tasks:
             time.sleep(0.05)  # 等待50毫秒再检查
     
-    # 确保所有音频块都已经输出
+    # 确保所有音频块都已经输出，添加间隔控制
     for output in yield_ready_audio_chunks(audio_queue, segment_order, current_output_segment_id, force_all=True):
         if isinstance(output, AdditionalOutputs):
             yield output
         else:
-            current_output_segment_id = output[0]
+            # 控制音频块输出间隔，避免挤在一起
+            current_time = time.time()
+            if current_time - last_audio_yield_time < min_audio_interval:
+                time.sleep(min_audio_interval - (current_time - last_audio_yield_time))
+            
             yield output[1]  # 实际音频块
+            last_audio_yield_time = time.time()
     
     # 在yield完所有内容后，再yield一次full_response字符串
     # 这样调用者就可以获取完整的响应文本
