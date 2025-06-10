@@ -1,5 +1,6 @@
 import styles from './index.module.less'
 import { useEffect, useRef, useState, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import ParticleBackground from './components/ParticleBackground'
 import Live2dModel from '@/components/Live2dModel'
 import { observer } from 'mobx-react'
@@ -34,6 +35,7 @@ export const API_BASE_URL = "/api";
  * 实现了一个基于WebRTC的AI语音对话系统，集成了Live2D模型呈现
  */
 const VoiceAssistant = observer(() => {
+  const { t } = useTranslation();
   // 音频元素引用，用于播放AI回复的声音
   const audioRef = useRef<HTMLAudioElement>(null);
   // 是否正在加载(等待AI响应)
@@ -503,9 +505,9 @@ const VoiceAssistant = observer(() => {
           {isLoading ? (
             <span className={styles.loadingDot} />
           ) : isSpeaking ? (
-            <span>倾听中...</span>
+            <span>{t('dialog.listening')}</span>
           ) : (
-            <span>{latestAiMessage || '等待中...'}</span>
+            <span>{latestAiMessage || t('dialog.waiting')}</span>
           )}
         </div>
       </div>

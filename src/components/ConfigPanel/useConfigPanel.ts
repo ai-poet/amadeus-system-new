@@ -60,7 +60,7 @@ export const useConfigPanel = (open: boolean, onOpenChange: (open: boolean) => v
     whisper_model: 'whisper-large-v3',
     custom_whisper_model: '',
     siliconflow_voice: '',
-    ai_model: '',
+    ai_model: 'gpt-4.1-mini',
     custom_model_name: '',
     voice_output_language: 'ja',
     text_output_language: 'zh',

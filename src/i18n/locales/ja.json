@@ -1,0 +1,151 @@
+{
+  "config": {
+    "title": "設定",
+    "ai": "AI設定",
+    "live2d": "Live2D設定",
+    "voice": "音声設定"
+  },
+  "toolbar": {
+    "micOn": "マイクオン",
+    "micOff": "マイクオフ",
+    "videoOn": "ビデオオン",
+    "videoOff": "ビデオオフ",
+    "history": "履歴",
+    "config": "設定",
+    "logout": "ログアウト"
+  },
+  "ai": {
+    "title": "AI会話設定",
+    "builtinService": "内蔵サービスを使用",
+    "builtinServiceDesc": "内蔵のAIとTTSサービスを使用、設定不要",
+    "customService": "カスタムサービスを使用",
+    "customServiceDesc": "独自のAIとTTSサービスを設定",
+    "llmProvider": "LLMサービスプロバイダー:",
+    "llmApiKey": "LLM APIキー:",
+    "llmApiKeyPlaceholder": "APIキーを入力してください",
+    "llmBaseUrl": "LLMベースURLタイプ:",
+    "customUrl": "カスタムURL:",
+    "customUrlPlaceholder": "カスタムベースURLを入力してください",
+    "aiModel": "AIモデル:",
+    "systemPrompt": "システムプロンプト:",
+    "systemPromptPlaceholder": "AIの役割と動作を定義するシステムプロンプトを入力...",
+    "userName": "ユーザー名:",
+    "userNamePlaceholder": "ユーザー名を入力してください",
+    "maxContextLength": "最大コンテキスト長:",
+    "voiceOutputLanguage": "音声出力言語:",
+    "voiceOutputLanguagePlaceholder": "音声出力言語を選択",
+    "textOutputLanguage": "テキスト出力言語:",
+    "textOutputLanguagePlaceholder": "テキスト出力言語を選択"
+  },
+  "asr": {
+    "title": "ASR音声認識設定",
+    "whisperApiKey": "Whisper APIキー:",
+    "whisperApiKeyPlaceholder": "Whisper APIキーを入力してください",
+    "whisperBaseUrl": "Whisper ベースURL:",
+    "whisperBaseUrlPlaceholder": "Whisper ベースURLを入力してください",
+    "customWhisperModel": "カスタムWhisperモデル:",
+    "customWhisperModelPlaceholder": "カスタムモデル名を入力してください"
+  },
+  "tts": {
+    "title": "TTS音声合成設定",
+    "provider": "サービスプロバイダー:",
+    "siliconflowApiKey": "SiliconFlow APIキー:",
+    "siliconflowApiKeyPlaceholder": "SiliconFlow APIキーを入力してください",
+    "siliconflowVoice": "SiliconFlow音声:",
+    "siliconflowVoicePlaceholder": "音声IDを入力してください",
+    "generateVoiceId": "音声ID生成",
+    "voiceClone": "音声クローン"
+  },
+  "mem0": {
+    "apiKey": "MEM0 APIキー:",
+    "apiKeyPlaceholder": "MEM0 APIキーを入力してください"
+  },
+  "live2d": {
+    "title": "Live2Dモデル設定",
+    "scale": "スケール:",
+    "positionX": "X座標:",
+    "positionY": "Y座標:",
+    "reset": "位置をリセット"
+  },
+  "common": {
+    "save": "設定を保存",
+    "cancel": "キャンセル",
+    "confirm": "確認",
+    "close": "閉じる",
+    "chinese": "中国語",
+    "english": "英語",
+    "japanese": "日本語",
+    "loading": "読み込み中...",
+    "error": "エラー",
+    "success": "成功"
+  },
+  "validation": {
+    "required": "この項目は必須です",
+    "invalidApiKey": "無効なAPIキー形式",
+    "invalidUrl": "無効なURL形式",
+    "invalidNumber": "有効な数値を入力してください"
+  },
+  "login": {
+    "title": "AMADEUS",
+    "version": "ALPHA",
+    "terminal": "LOGIN TERMINAL", 
+    "terminalMobile": "LOGIN",
+    "userId": "USER_ID:",
+    "usernamePlaceholder": "ユーザー名を入力",
+    "usernamePlaceholderMobile": "ユーザー名",
+    "usernameRequired": "ユーザー名を入力してください",
+    "verifying": "認証中...",
+    "login": "SYSTEM LOGIN",
+    "loginMobile": "ログイン",
+    "initializing": "SYSTEM INITIALIZING...",
+    "initializingMobile": "初期化中...",
+    "secureConnection": "SECURE CONNECTION"
+  },
+  "dialog": {
+    "ready": "準備完了",
+    "connecting": "接続を確立中、お待ちください...",
+    "firstConfigComplete": "バーチャルアバターの初期設定が完了しました。アバターの位置が適切であることを確認してから、下のボタンをクリックして会話を開始してください",
+    "readyToStart": "準備完了、下のボタンをクリックして会話を開始",
+    "startConversation": "会話を開始",
+    "connecting2": "接続中...",
+    "listening": "聞いています...",
+    "waiting": "待機中..."
+  },
+  "history": {
+    "title": "会話履歴",
+    "clear": "履歴をクリア",
+    "user": "ユーザー",
+    "ai": "AI"
+  },
+  "sections": {
+    "llmConfig": "LLM設定",
+    "asrConfig": "ASR音声認識設定",
+    "ttsConfig": "TTS音声合成設定",
+    "memoryConfig": "MEM0メモリ設定",
+    "generalSettings": "一般設定"
+  },
+  "placeholders": {
+    "selectLlmBaseUrl": "LLMベースURLタイプを選択",
+    "selectAiModel": "AIモデルを選択",
+    "selectAsrBaseUrl": "ASRベースURLタイプを選択", 
+    "selectAsrModel": "ASRモデルを選択",
+    "selectTtsProvider": "音声サービスプロバイダーを選択",
+    "enterCustomModelId": "カスタムモデルID",
+    "enterCustomBaseUrl": "カスタムベースURLを入力してください",
+    "enterCustomModel": "カスタムモデル名を入力してください",
+    "yourName": "お名前",
+    "systemPromptDesc": "AIの役割と動作を定義するシステムプロンプトを入力...",
+    "pleaseCompleteFields": "設定を保存する前に必須フィールドを完成してください"
+  },
+  "alerts": {
+    "apiStandardFormat": "インターフェースはOpenAI標準フォーマットに準拠しており、OpenAI API互換のサービスが使用できます",
+    "whisperApiStandardFormat": "インターフェースはOpenAI標準フォーマットに準拠しており、OpenAI Whisper API互換のサービスが使用できます",
+    "live2dPositionNote": "以下のパラメータを調整してバーチャルアバターが画面の可視領域内にあることを確認し、位置とスケールを適切に調整した後、設定を保存してください",
+    "memoryServiceNote": "長期記憶サービスのAPIキー、設定しない場合はシステムデフォルト値を使用",
+    "contextLengthNote": "AIモデルに送信するコンテキストメッセージ数を制御します。値が大きいほど効果は良くなりますが、より多くのリソースを消費します。推奨値：20-50"
+  },
+  "buttons": {
+    "voiceCloneSuccess": "クローン成功",
+    "startVoiceClone": "音声クローンを開始"
+  }
+}

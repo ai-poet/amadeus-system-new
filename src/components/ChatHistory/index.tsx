@@ -1,6 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
+import { useTranslation } from 'react-i18next'
 import styles from './index.module.less'
 import type { ChatMessage } from '@/types/chat'
 import { Button } from '@/components/ui/button'
@@ -14,6 +15,7 @@ interface ChatHistoryProps {
 }
 
 const ChatHistory = ({ open, onOpenChange, chatHistory, onDeleteHistory }: ChatHistoryProps) => {
+  const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -26,8 +28,8 @@ const ChatHistory = ({ open, onOpenChange, chatHistory, onDeleteHistory }: ChatH
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[80vw] h-[80vh] flex flex-col p-0">
         <DialogHeader className="p-6 pb-4 flex justify-between items-center">
-          <DialogTitle>对话历史记录</DialogTitle>
-          <Button variant="destructive" onClick={onDeleteHistory} className="ml-auto">清空历史</Button>
+          <DialogTitle>{t('history.title')}</DialogTitle>
+          <Button variant="destructive" onClick={onDeleteHistory} className="ml-auto">{t('history.clear')}</Button>
         </DialogHeader>
         <ScrollArea className="flex-1 p-6 pt-0" ref={scrollRef}>
           <div className={styles.historyContainer}>
@@ -45,7 +47,7 @@ const ChatHistory = ({ open, onOpenChange, chatHistory, onDeleteHistory }: ChatH
                     msg.role === 'user' ? styles.userMessage : styles.assistantMessage
                   )}
                 >
-                  <div className={styles.messageContent}>{msg.role === 'user' ? '用户' : 'AI'}: {msg.content}</div>
+                  <div className={styles.messageContent}>{msg.role === 'user' ? t('history.user') : t('history.ai')}: {msg.content}</div>
                   <div className={styles.timestamp}>
                     {new Date(msg.timestamp).toLocaleString()}
                   </div>

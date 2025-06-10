@@ -1,0 +1,151 @@
+{
+  "config": {
+    "title": "配置",
+    "ai": "AI 设置",
+    "live2d": "Live2D 设置",
+    "voice": "语音设置"
+  },
+  "toolbar": {
+    "micOn": "开麦",
+    "micOff": "闭麦",
+    "videoOn": "开启视频",
+    "videoOff": "关闭视频",
+    "history": "历史记录",
+    "config": "模型配置",
+    "logout": "登出系统"
+  },
+  "ai": {
+    "title": "AI 智能对话设置",
+    "builtinService": "使用内置服务",
+    "builtinServiceDesc": "使用内置的AI和TTS服务，无需配置",
+    "customService": "使用自定义服务",
+    "customServiceDesc": "配置自己的AI和TTS服务",
+    "llmProvider": "LLM 服务提供商:",
+    "llmApiKey": "LLM API密钥:",
+    "llmApiKeyPlaceholder": "请输入您的API密钥",
+    "llmBaseUrl": "LLM 基础URL类型:",
+    "customUrl": "自定义 URL:",
+    "customUrlPlaceholder": "请输入自定义基础URL",
+    "aiModel": "AI模型:",
+    "systemPrompt": "系统提示词:",
+    "systemPromptPlaceholder": "输入系统提示词来定义AI角色和行为...",
+    "userName": "用户名称:",
+    "userNamePlaceholder": "请输入您的用户名",
+    "maxContextLength": "最大上下文长度:",
+    "voiceOutputLanguage": "语音输出语言:",
+    "voiceOutputLanguagePlaceholder": "选择语音输出语言",
+    "textOutputLanguage": "文本输出语言:",
+    "textOutputLanguagePlaceholder": "选择文本输出语言"
+  },
+  "asr": {
+    "title": "ASR 语音识别设置",
+    "whisperApiKey": "Whisper API密钥:",
+    "whisperApiKeyPlaceholder": "请输入Whisper API密钥",
+    "whisperBaseUrl": "Whisper 基础URL:",
+    "whisperBaseUrlPlaceholder": "请输入Whisper基础URL",
+    "customWhisperModel": "自定义Whisper模型:",
+    "customWhisperModelPlaceholder": "请输入自定义模型名称"
+  },
+  "tts": {
+    "title": "TTS 语音合成设置",
+    "provider": "服务提供商:",
+    "siliconflowApiKey": "SiliconFlow API密钥:",
+    "siliconflowApiKeyPlaceholder": "请输入SiliconFlow API密钥",
+    "siliconflowVoice": "SiliconFlow 语音:",
+    "siliconflowVoicePlaceholder": "请输入语音ID",
+    "generateVoiceId": "生成语音ID",
+    "voiceClone": "语音克隆"
+  },
+  "mem0": {
+    "apiKey": "MEM0 API密钥:",
+    "apiKeyPlaceholder": "请输入MEM0 API密钥"
+  },
+  "live2d": {
+    "title": "Live2D 模型设置",
+    "scale": "缩放:",
+    "positionX": "X坐标:",
+    "positionY": "Y坐标:",
+    "reset": "重置位置"
+  },
+  "common": {
+    "save": "保存配置",
+    "cancel": "取消",
+    "confirm": "确认",
+    "close": "关闭",
+    "chinese": "中文",
+    "english": "英文",
+    "japanese": "日文",
+    "loading": "加载中...",
+    "error": "错误",
+    "success": "成功"
+  },
+  "validation": {
+    "required": "此字段为必填项",
+    "invalidApiKey": "API密钥格式无效",
+    "invalidUrl": "URL格式无效",
+    "invalidNumber": "请输入有效数字"
+  },
+  "login": {
+    "title": "AMADEUS",
+    "version": "ALPHA",
+    "terminal": "LOGIN TERMINAL",
+    "terminalMobile": "LOGIN",
+    "userId": "USER_ID:",
+    "usernamePlaceholder": "输入用户名",
+    "usernamePlaceholderMobile": "用户名",
+    "usernameRequired": "请输入用户名",
+    "verifying": "验证中...",
+    "login": "SYSTEM LOGIN",
+    "loginMobile": "登录",
+    "initializing": "SYSTEM INITIALIZING...",
+    "initializingMobile": "初始化中...",
+    "secureConnection": "SECURE CONNECTION"
+  },
+  "dialog": {
+    "ready": "准备就绪",
+    "connecting": "正在建立连接，请稍候...",
+    "firstConfigComplete": "虚拟形象初始配置已完成，请确认虚拟形象位置合适后点击下方按钮开始对话",
+    "readyToStart": "已就绪，点击下方按钮开始对话",
+    "startConversation": "开始对话",
+    "connecting2": "连接中...",
+    "listening": "倾听中...",
+    "waiting": "等待中..."
+  },
+  "history": {
+    "title": "对话历史记录",
+    "clear": "清空历史",
+    "user": "用户",
+    "ai": "AI"
+  },
+  "sections": {
+    "llmConfig": "LLM 配置",
+    "asrConfig": "ASR 语音识别设置",
+    "ttsConfig": "TTS 语音合成设置",
+    "memoryConfig": "MEM0 记忆配置",
+    "generalSettings": "通用设置"
+  },
+  "placeholders": {
+    "selectLlmBaseUrl": "选择LLM基础URL类型",
+    "selectAiModel": "选择 AI 模型",
+    "selectAsrBaseUrl": "选择ASR基础URL类型",
+    "selectAsrModel": "选择ASR模型",
+    "selectTtsProvider": "选择语音服务提供商",
+    "enterCustomModelId": "自定义模型ID",
+    "enterCustomBaseUrl": "请输入自定义基础URL",
+    "enterCustomModel": "请输入自定义模型名称",
+    "yourName": "您的名称",
+    "systemPromptDesc": "输入系统提示词，定义AI的角色和行为...",
+    "pleaseCompleteFields": "请完善必填字段后再保存配置"
+  },
+  "alerts": {
+    "apiStandardFormat": "接口遵循OpenAI标准格式，可使用任何兼容OpenAI API的服务",
+    "whisperApiStandardFormat": "接口遵循OpenAI标准格式，可使用任何兼容OpenAI Whisper API的服务",
+    "live2dPositionNote": "请通过调整以下参数确保虚拟形象位于屏幕可视区域内，并且位置和缩放比例调整合适后，再点击保存配置",
+    "memoryServiceNote": "长期记忆服务的密钥，不设置则使用系统默认值",
+    "contextLengthNote": "控制发送给AI模型的上下文消息数量，数值越大效果越好但消耗更多资源。推荐值：20-50"
+  },
+  "buttons": {
+    "voiceCloneSuccess": "克隆成功",
+    "startVoiceClone": "开始语音克隆"
+  }
+}

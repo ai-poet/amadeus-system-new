@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import styles from './index.module.less';
 
 interface LoginOverlayProps {
@@ -7,6 +8,7 @@ interface LoginOverlayProps {
 }
 
 const LoginOverlay = ({ onLogin, isModelReady }: LoginOverlayProps) => {
+  const { t } = useTranslation();
   const [username, setUsername] = useState(import.meta.env.VITE_APP_DEFAULT_USERNAME || '');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -41,7 +43,7 @@ const LoginOverlay = ({ onLogin, isModelReady }: LoginOverlayProps) => {
     setIsLoading(true);
     
     if (!username) {
-      setError('请输入用户名');
+      setError(t('login.usernameRequired'));
       setIsLoading(false);
       return;
     }
@@ -76,15 +78,15 @@ const LoginOverlay = ({ onLogin, isModelReady }: LoginOverlayProps) => {
           <div className={styles.logoContainer}>
             <div className={styles.logoBackground}>
               <span className={styles.logoText}>
-                {isMobile ? "AMADEUS" : "AMADEUS"}
+                {t('login.title')}
               </span>
               <div className={styles.scanLine}></div>
             </div>
           </div>
           <div>
-            <p className={styles.systemVersion}>ALPHA</p>
+            <p className={styles.systemVersion}>{t('login.version')}</p>
             <p className={styles.secureTerminal}>
-              {isMobile ? "LOGIN" : "LOGIN TERMINAL"}
+              {isMobile ? t('login.terminalMobile') : t('login.terminal')}
             </p>
           </div>
         </div>
@@ -94,10 +96,10 @@ const LoginOverlay = ({ onLogin, isModelReady }: LoginOverlayProps) => {
           <div className={styles.inputGroup}>
             <div className={styles.inputGlow}></div>
             <div className={styles.inputWrapper}>
-              <span className={styles.inputLabel}>USER_ID:</span>
+              <span className={styles.inputLabel}>{t('login.userId')}</span>
               <input
                 type="text"
-                placeholder={isMobile ? "用户名" : "输入用户名"}
+                placeholder={isMobile ? t('login.usernamePlaceholderMobile') : t('login.usernamePlaceholder')}
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className={styles.input}
@@ -133,15 +135,15 @@ const LoginOverlay = ({ onLogin, isModelReady }: LoginOverlayProps) => {
               )}
               {isModelReady 
                 ? (isLoading 
-                  ? "验证中..." 
-                  : (isMobile ? "登录" : "SYSTEM LOGIN")) 
-                : (isMobile ? "初始化中..." : "SYSTEM INITIALIZING...")}
+                  ? t('login.verifying')
+                  : (isMobile ? t('login.loginMobile') : t('login.login')))
+                : (isMobile ? t('login.initializingMobile') : t('login.initializing'))}
             </button>
           </div>
 
           {/* 底部装饰 */}
           <div className={styles.footer}>
-            SECURE CONNECTION
+            {t('login.secureConnection')}
           </div>
         </form>
       </div>

@@ -1,0 +1,151 @@
+{
+  "config": {
+    "title": "Configuration",
+    "ai": "AI Settings",
+    "live2d": "Live2D Settings", 
+    "voice": "Voice Settings"
+  },
+  "toolbar": {
+    "micOn": "Mic On",
+    "micOff": "Mic Off",
+    "videoOn": "Video On",
+    "videoOff": "Video Off",
+    "history": "History",
+    "config": "Configuration",
+    "logout": "Logout"
+  },
+  "ai": {
+    "title": "AI Conversation Settings",
+    "builtinService": "Use Built-in Service",
+    "builtinServiceDesc": "Use built-in AI and TTS services, no configuration needed",
+    "customService": "Use Custom Service",
+    "customServiceDesc": "Configure your own AI and TTS services",
+    "llmProvider": "LLM Service Provider:",
+    "llmApiKey": "LLM API Key:",
+    "llmApiKeyPlaceholder": "Please enter your API key",
+    "llmBaseUrl": "LLM Base URL Type:",
+    "customUrl": "Custom URL:",
+    "customUrlPlaceholder": "Please enter custom base URL",
+    "aiModel": "AI Model:",
+    "systemPrompt": "System Prompt:",
+    "systemPromptPlaceholder": "Enter system prompt to define AI role and behavior...",
+    "userName": "User Name:",
+    "userNamePlaceholder": "Please enter your username",
+    "maxContextLength": "Max Context Length:",
+    "voiceOutputLanguage": "Voice Output Language:",
+    "voiceOutputLanguagePlaceholder": "Select voice output language",
+    "textOutputLanguage": "Text Output Language:",
+    "textOutputLanguagePlaceholder": "Select text output language"
+  },
+  "asr": {
+    "title": "ASR Speech Recognition Settings",
+    "whisperApiKey": "Whisper API Key:",
+    "whisperApiKeyPlaceholder": "Please enter Whisper API key",
+    "whisperBaseUrl": "Whisper Base URL:",
+    "whisperBaseUrlPlaceholder": "Please enter Whisper base URL",
+    "customWhisperModel": "Custom Whisper Model:",
+    "customWhisperModelPlaceholder": "Please enter custom model name"
+  },
+  "tts": {
+    "title": "TTS Speech Synthesis Settings",
+    "provider": "Service Provider:",
+    "siliconflowApiKey": "SiliconFlow API Key:",
+    "siliconflowApiKeyPlaceholder": "Please enter SiliconFlow API key",
+    "siliconflowVoice": "SiliconFlow Voice:",
+    "siliconflowVoicePlaceholder": "Please enter voice ID",
+    "generateVoiceId": "Generate Voice ID",
+    "voiceClone": "Voice Clone"
+  },
+  "mem0": {
+    "apiKey": "MEM0 API Key:",
+    "apiKeyPlaceholder": "Please enter MEM0 API key"
+  },
+  "live2d": {
+    "title": "Live2D Model Settings",
+    "scale": "Scale:",
+    "positionX": "X Position:",
+    "positionY": "Y Position:",
+    "reset": "Reset Position"
+  },
+  "common": {
+    "save": "Save Configuration",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "close": "Close",
+    "chinese": "Chinese",
+    "english": "English",
+    "japanese": "Japanese",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success"
+  },
+  "validation": {
+    "required": "This field is required",
+    "invalidApiKey": "Invalid API key format",
+    "invalidUrl": "Invalid URL format",
+    "invalidNumber": "Please enter a valid number"
+  },
+  "login": {
+    "title": "AMADEUS",
+    "version": "ALPHA", 
+    "terminal": "LOGIN TERMINAL",
+    "terminalMobile": "LOGIN",
+    "userId": "USER_ID:",
+    "usernamePlaceholder": "Enter username",
+    "usernamePlaceholderMobile": "Username",
+    "usernameRequired": "Please enter username",
+    "verifying": "Verifying...",
+    "login": "SYSTEM LOGIN",
+    "loginMobile": "Login",
+    "initializing": "SYSTEM INITIALIZING...",
+    "initializingMobile": "Initializing...",
+    "secureConnection": "SECURE CONNECTION"
+  },
+  "dialog": {
+    "ready": "Ready",
+    "connecting": "Establishing connection, please wait...",
+    "firstConfigComplete": "Virtual avatar initial configuration completed, please confirm the avatar position is appropriate and click the button below to start conversation",
+    "readyToStart": "Ready, click the button below to start conversation",
+    "startConversation": "Start Conversation",
+    "connecting2": "Connecting...",
+    "listening": "Listening...",
+    "waiting": "Waiting..."
+  },
+  "history": {
+    "title": "Chat History",
+    "clear": "Clear History",
+    "user": "User",
+    "ai": "AI"
+  },
+  "sections": {
+    "llmConfig": "LLM Configuration",
+    "asrConfig": "ASR Speech Recognition Settings",
+    "ttsConfig": "TTS Speech Synthesis Settings", 
+    "memoryConfig": "MEM0 Memory Configuration",
+    "generalSettings": "General Settings"
+  },
+  "placeholders": {
+    "selectLlmBaseUrl": "Select LLM base URL type",
+    "selectAiModel": "Select AI model",
+    "selectAsrBaseUrl": "Select ASR base URL type",
+    "selectAsrModel": "Select ASR model",
+    "selectTtsProvider": "Select voice service provider",
+    "enterCustomModelId": "Custom Model ID",
+    "enterCustomBaseUrl": "Please enter custom base URL",
+    "enterCustomModel": "Please enter custom model name",
+    "yourName": "Your name",
+    "systemPromptDesc": "Enter system prompt to define AI role and behavior...",
+    "pleaseCompleteFields": "Please complete required fields before saving configuration"
+  },
+  "alerts": {
+    "apiStandardFormat": "Interface follows OpenAI standard format, any OpenAI API compatible service can be used",
+    "whisperApiStandardFormat": "Interface follows OpenAI standard format, any OpenAI Whisper API compatible service can be used",
+    "live2dPositionNote": "Please adjust the following parameters to ensure the virtual avatar is within the visible area of the screen, and click save configuration after adjusting the position and scale appropriately",
+    "memoryServiceNote": "API key for long-term memory service, uses system default if not set",
+    "contextLengthNote": "Controls the number of context messages sent to the AI model. Higher values provide better results but consume more resources. Recommended: 20-50"
+  },
+  "buttons": {
+    "voiceCloneSuccess": "Clone Successful",
+    "startVoiceClone": "Start Voice Cloning"
+  }
+}

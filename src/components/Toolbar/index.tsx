@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { Mic, MicOff, Video, VideoOff, History, LogOut, Settings } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import styles from './index.module.less'
 
 interface ToolbarProps {
@@ -13,40 +14,42 @@ interface ToolbarProps {
 }
 
 const Toolbar: React.FC<ToolbarProps> = ({ isListening, isVideoOn, onToggleListening, onToggleVideo, onShowHistory, onLogout, onShowConfig }) => {
+  const { t } = useTranslation();
+  
   return (
     <div className={styles.toolbar}>
       <Button
         onClick={onToggleListening}
         variant="ghost"
-        title={isListening ? "闭麦" : "开麦"}
+        title={isListening ? t('toolbar.micOff') : t('toolbar.micOn')}
       >
         {isListening ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
       </Button>
       <Button
         onClick={onToggleVideo}
         variant="ghost"
-        title={isVideoOn ? "关闭视频" : "开启视频"}
+        title={isVideoOn ? t('toolbar.videoOff') : t('toolbar.videoOn')}
       >
         {isVideoOn ? <VideoOff className="h-6 w-6" /> : <Video className="h-6 w-6" />}
       </Button>
       <Button
         onClick={onShowHistory}
         variant="ghost"
-        title="历史记录"
+        title={t('toolbar.history')}
       >
         <History className="h-6 w-6" />
       </Button>
       <Button
         onClick={onShowConfig}
         variant="ghost"
-        title="模型配置"
+        title={t('toolbar.config')}
       >
         <Settings className="h-6 w-6" />
       </Button>
       <Button
         onClick={onLogout}
         variant="ghost"
-        title="登出系统"
+        title={t('toolbar.logout')}
       >
         <LogOut className="h-6 w-6" />
       </Button>
