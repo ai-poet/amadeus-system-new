@@ -140,15 +140,15 @@ def run_tts_in_thread(text_to_speech_stream, segment, voice, segment_id):
         logging.info(f"TTS任务结束标记已发送 - 段落ID: {segment_id}")
 
 def check_and_process_tts_tasks(
-    pending_tts_tasks, 
-    audio_queue, 
-    segment_order,
-    current_output_segment_id
+    pending_tts_tasks: Dict[str, int],  # 改为int，value表示已产生的chunk数量
+    audio_queue: Deque[Tuple[str, Any]], 
+    segment_order: List[str],
+    current_output_segment_id: List[Optional[str]]
 ):
     """检查并处理已完成的TTS任务，从共享队列获取音频块"""
     # 从共享队列中获取所有可用的音频块
     temp_chunks = []  # 临时存储新获取的音频块
-    completed_segments = []  # 记录完成的段落
+    completed_segments = []  # 记录正常完成的段落 (segment_id, chunk_count)
     failed_segments = []  # 记录失败（无音频块）的段落
     
     while not _audio_chunk_queue.empty():
@@ -157,17 +157,17 @@ def check_and_process_tts_tasks(
             
             # 如果是None标记，表示该段落的TTS已完成
             if audio_chunk is None:
-                if segment_id in pending_tts_tasks:
-                    pending_tts_tasks.pop(segment_id, None)
-                    completed_segments.append(segment_id)
-                    
-                    # 检查这个段落是否产生了任何音频块
-                    has_audio_chunks = any(chunk_seg_id == segment_id for chunk_seg_id, _ in temp_chunks)
-                    if not has_audio_chunks:
-                        # 这是一个失败的段落，没有产生任何音频块
-                        failed_segments.append(segment_id)
+                # TTS流标记完成，pop出来拿到它的chunk计数
+                count = pending_tts_tasks.pop(segment_id, 0)
+                if count == 0:
+                    # 真正失败，没有产生任何音频块
+                    failed_segments.append(segment_id)
+                else:
+                    # 正常完成，记录产生的块数
+                    completed_segments.append((segment_id, count))
             else:
-                # 将音频块暂存到临时列表
+                # 真正的音频块，增加计数
+                pending_tts_tasks[segment_id] = pending_tts_tasks.get(segment_id, 0) + 1
                 temp_chunks.append((segment_id, audio_chunk))
         except queue.Empty:
             break
@@ -176,20 +176,16 @@ def check_and_process_tts_tasks(
     for failed_segment_id in failed_segments:
         if failed_segment_id in segment_order:
             segment_order.remove(failed_segment_id)
-            logging.warning(f"段落 {failed_segment_id} 的TTS完成但无音频块，已从处理序列中移除")
+            logging.warning(f"段落 {failed_segment_id} 的TTS完成但真没有音频块，已从处理序列中移除")
             
             # 如果当前输出段落指向失败的段落，需要切换到下一个
             if current_output_segment_id[0] == failed_segment_id:
-                if segment_order:  # 如果还有其他段落
-                    current_output_segment_id[0] = segment_order[0]
-                    logging.info(f"当前输出段落已切换到: {current_output_segment_id[0]}")
-                else:
-                    current_output_segment_id[0] = None
-                    logging.info("没有更多段落需要处理")
+                _skip_to_next_segment(segment_order, current_output_segment_id)
     
-    # 记录完成的段落
+    # 记录正常完成的段落
     if completed_segments:
-        logging.info(f"TTS完成的段落: {completed_segments}, 剩余待处理段落: {list(pending_tts_tasks.keys())}")
+        completed_ids = [seg_id for seg_id, count in completed_segments]
+        logging.info(f"TTS正常完成的段落: {completed_ids}, 剩余待处理段落: {list(pending_tts_tasks.keys())}")
     
     # 按照segment_order对新获取的音频块进行排序，然后添加到队列
     if temp_chunks:
@@ -217,59 +213,38 @@ def yield_ready_audio_chunks(audio_queue, segment_order, current_output_segment_
         logging.info(f"开始输出第一个段落: {current_output_segment_id[0]}")
     
     yielded_count = 0
-    # 添加等待状态跟踪，避免重复日志
-    last_waited_segment = None
     
-    # 处理队列中的音频块
+    # 处理队列中的音频块 - 使用简化逻辑
     while audio_queue:
-        # 查看队首元素但不移除
-        segment_id, chunk = audio_queue[0]
+        head_seg, chunk = audio_queue[0]
         
         # 如果是当前输出段落的块或强制输出所有内容，则yield出去
-        if force_all or segment_id == current_output_segment_id[0]:
-            audio_queue.popleft()  # 从队列中移除
+        if head_seg == current_output_segment_id[0] or force_all:
+            audio_queue.popleft()
             yielded_count += 1
-            yield (segment_id, chunk)
-            # 重置等待状态
-            last_waited_segment = None
+            yield (head_seg, chunk)
         else:
-            # 不是当前段落的块，检查是否需要跳过当前段落
-            if not force_all:
-                # 检查当前段落是否应该被跳过
-                should_skip_current = False
-                
-                if pending_tts_tasks is not None and current_output_segment_id[0] not in pending_tts_tasks:
-                    # 当前段落的TTS已经完成但没有音频块，可能失败了
-                    should_skip_current = True
-                    logging.warning(f"当前段落 {current_output_segment_id[0]} 的TTS已完成但没有音频块，跳过该段落")
-                elif segment_order and current_output_segment_id[0] in segment_order:
-                    # 检查队首段落是否在当前段落之后
-                    current_idx = segment_order.index(current_output_segment_id[0])
-                    if segment_id in segment_order:
-                        queue_head_idx = segment_order.index(segment_id)
-                        if queue_head_idx > current_idx:
-                            # 队首段落在当前段落之后，说明当前段落可能已经失败
-                            should_skip_current = True
-                            logging.warning(f"检测到段落顺序异常，跳过当前段落 {current_output_segment_id[0]}，队首段落: {segment_id}")
-                
-                if should_skip_current:
-                    # 跳过当前段落，移动到下一个
-                    _skip_to_next_segment(segment_order, current_output_segment_id)
-                    last_waited_segment = None
-                    continue  # 重新开始循环，用新的当前段落ID检查
-                else:
-                    # 正常等待，记录等待状态（但避免重复记录）
-                    if last_waited_segment != segment_id:
-                        logging.info(f"等待当前段落 {current_output_segment_id[0]} 完成，队首段落: {segment_id}")
-                        last_waited_segment = segment_id
-            break
+            # 检查队首段落是否在 segment_order 中且排在当前段落之后
+            if (head_seg in segment_order and 
+                current_output_segment_id[0] in segment_order and
+                segment_order.index(head_seg) > segment_order.index(current_output_segment_id[0])):
+                # 队首段落在当前段落之后，跳到下一个段落
+                logging.info(f"队首段落 {head_seg} 在当前段落 {current_output_segment_id[0]} 之后，跳过当前段落")
+                _skip_to_next_segment(segment_order, current_output_segment_id)
+                continue  # 重新开始循环，用新的当前段落ID检查
+            elif head_seg not in segment_order:
+                # 队首段落不在 segment_order 中，这是过期的音频块，直接丢弃
+                logging.warning(f"发现过期音频块，段落ID: {head_seg}，直接丢弃")
+                audio_queue.popleft()
+                continue
+            else:
+                # 正常等待当前段落完成
+                logging.info(f"等待当前段落 {current_output_segment_id[0]} 完成，队首段落: {head_seg}")
+                break
         
-        # 如果当前段落的所有块都已输出，并且队列为空或队首是新段落
+        # 如果当前段落的所有块都已输出，检查是否需要切换到下一个段落
         if not audio_queue or audio_queue[0][0] != current_output_segment_id[0]:
-            # 移动到下一个段落
             _skip_to_next_segment(segment_order, current_output_segment_id)
-            # 重置等待状态，因为切换了段落
-            last_waited_segment = None
     
     if yielded_count > 0:
         logging.info(f"本次输出了 {yielded_count} 个音频块，剩余队列长度: {len(audio_queue)}")
@@ -335,7 +310,7 @@ def process_llm_stream(
             break
     
     # 存储正在进行的TTS任务（现在只用于跟踪哪些段落正在处理）
-    pending_tts_tasks: Dict[str, bool] = {}
+    pending_tts_tasks: Dict[str, int] = {}
     
     # 存储待输出的音频块队列
     audio_queue: Deque[Tuple[str, Any]] = deque()  # (segment_id, audio_chunk)
@@ -401,6 +376,9 @@ def process_llm_stream(
                     # 为段落生成唯一ID
                     segment_id = f"segment_{time.time()}_{len(segment)}"
                     segment_order.append(segment_id)
+                    
+                    # 先初始化计数为0，必须在submit之前
+                    pending_tts_tasks[segment_id] = 0
 
                     # Submit TTS to _tts_pool early
                     _tts_pool.submit(
@@ -410,8 +388,6 @@ def process_llm_stream(
                         siliconflow_config.get("voice"),
                         segment_id
                     )
-                    # Mark this segment's TTS as pending
-                    pending_tts_tasks[segment_id] = True
 
                     translated_segment = None
                     if voice_output_language and text_output_language and voice_output_language != text_output_language:
@@ -439,9 +415,6 @@ def process_llm_stream(
                         full_response_for_client_segments.append(translated_segment)
                     else:
                         full_response_for_client_segments.append(segment)
-                    
-                    # 标记该段落正在处理TTS (already done above)
-                    pending_tts_tasks[segment_id] = True
                     
                     # 立即检查是否有新的音频块可用
                     check_and_process_tts_tasks(
@@ -472,6 +445,9 @@ def process_llm_stream(
         last_segment_text = current_buffer.strip() # Use a new variable for clarity
         last_segment_id = f"last_segment_{time.time()}"
         segment_order.append(last_segment_id)
+        
+        # 先初始化计数为0，必须在submit之前
+        pending_tts_tasks[last_segment_id] = 0
 
         # Submit TTS to _tts_pool early for the last segment
         _tts_pool.submit(
@@ -481,8 +457,6 @@ def process_llm_stream(
             siliconflow_config.get("voice"),
             last_segment_id
         )
-        # Mark this segment's TTS as pending
-        pending_tts_tasks[last_segment_id] = True
 
         translated_last_segment = None
         if voice_output_language and text_output_language and voice_output_language != text_output_language:
@@ -510,9 +484,6 @@ def process_llm_stream(
             full_response_for_client_segments.append(translated_last_segment)
         else:
             full_response_for_client_segments.append(last_segment_text)
-
-        # 标记该段落正在处理TTS (already done above)
-        pending_tts_tasks[last_segment_id] = True
     
     # 在LLM完成后立即进行情感分析，不等待TTS
     if run_predict_emotion and llm_completed:
