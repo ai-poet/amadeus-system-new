@@ -533,8 +533,15 @@ def process_llm_stream(
     yield AdditionalOutputs(llm_response_json)
     
     # 继续处理TTS
-    # 等待所有TTS任务完成
+    # 等待所有TTS任务完成，添加重试机制防止无限循环
+    consecutive_no_progress_count = 0
+    max_no_progress_iterations = 50  # 最多50次无进展迭代
+    
     while pending_tts_tasks:
+        # 记录循环前的状态
+        initial_pending_count = len(pending_tts_tasks)
+        initial_queue_size = len(audio_queue)
+        
         # 检查已完成的TTS任务并获取新的音频块
         check_and_process_tts_tasks(
             pending_tts_tasks, 
@@ -544,10 +551,12 @@ def process_llm_stream(
         )
         
         # 输出准备好的音频块，添加间隔控制
+        yielded_audio_count = 0
         for output in yield_ready_audio_chunks(audio_queue, segment_order, current_output_segment_id, pending_tts_tasks=pending_tts_tasks):
             if isinstance(output, AdditionalOutputs):
                 yield output
             else:
+                yielded_audio_count += 1
                 # 控制音频块输出间隔，避免挤在一起
                 current_time = time.time()
                 if current_time - last_audio_yield_time < min_audio_interval:
@@ -555,6 +564,27 @@ def process_llm_stream(
                 
                 yield output[1]  # 实际音频块
                 last_audio_yield_time = time.time()
+        
+        # 检查是否有进展
+        final_pending_count = len(pending_tts_tasks)
+        final_queue_size = len(audio_queue)
+        
+        has_progress = (
+            initial_pending_count > final_pending_count or  # 有任务完成
+            initial_queue_size < final_queue_size or       # 队列有新音频块
+            yielded_audio_count > 0                        # 输出了音频块
+        )
+        
+        if has_progress:
+            consecutive_no_progress_count = 0
+        else:
+            consecutive_no_progress_count += 1
+            
+        # 如果连续无进展次数过多，强制结束防止无限循环
+        if consecutive_no_progress_count >= max_no_progress_iterations:
+            logging.warning(f"检测到可能的无限循环，连续{max_no_progress_iterations}次无进展。强制结束TTS处理。")
+            logging.warning(f"剩余未完成段落: {list(pending_tts_tasks.keys())}")
+            break
         
         # 如果仍有未完成的任务，等待一小段时间
         if pending_tts_tasks:
