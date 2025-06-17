@@ -149,6 +149,7 @@ def check_and_process_tts_tasks(
     # 从共享队列中获取所有可用的音频块
     temp_chunks = []  # 临时存储新获取的音频块
     completed_segments = []  # 记录完成的段落
+    failed_segments = []  # 记录失败（无音频块）的段落
     
     while not _audio_chunk_queue.empty():
         try:
@@ -159,11 +160,32 @@ def check_and_process_tts_tasks(
                 if segment_id in pending_tts_tasks:
                     pending_tts_tasks.pop(segment_id, None)
                     completed_segments.append(segment_id)
+                    
+                    # 检查这个段落是否产生了任何音频块
+                    has_audio_chunks = any(chunk_seg_id == segment_id for chunk_seg_id, _ in temp_chunks)
+                    if not has_audio_chunks:
+                        # 这是一个失败的段落，没有产生任何音频块
+                        failed_segments.append(segment_id)
             else:
                 # 将音频块暂存到临时列表
                 temp_chunks.append((segment_id, audio_chunk))
         except queue.Empty:
             break
+    
+    # 处理失败的段落：从segment_order中彻底移除
+    for failed_segment_id in failed_segments:
+        if failed_segment_id in segment_order:
+            segment_order.remove(failed_segment_id)
+            logging.warning(f"段落 {failed_segment_id} 的TTS完成但无音频块，已从处理序列中移除")
+            
+            # 如果当前输出段落指向失败的段落，需要切换到下一个
+            if current_output_segment_id[0] == failed_segment_id:
+                if segment_order:  # 如果还有其他段落
+                    current_output_segment_id[0] = segment_order[0]
+                    logging.info(f"当前输出段落已切换到: {current_output_segment_id[0]}")
+                else:
+                    current_output_segment_id[0] = None
+                    logging.info("没有更多段落需要处理")
     
     # 记录完成的段落
     if completed_segments:
