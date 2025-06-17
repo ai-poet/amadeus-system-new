@@ -187,7 +187,7 @@ def check_and_process_tts_tasks(
     
     return None
 
-def yield_ready_audio_chunks(audio_queue, segment_order, current_output_segment_id, force_all=False):
+def yield_ready_audio_chunks(audio_queue, segment_order, current_output_segment_id, force_all=False, pending_tts_tasks=None):
     """按照段落顺序输出准备好的音频块"""
     # 如果当前没有正在输出的段落，取第一个
     if current_output_segment_id[0] is None and segment_order:
@@ -195,6 +195,8 @@ def yield_ready_audio_chunks(audio_queue, segment_order, current_output_segment_
         logging.info(f"开始输出第一个段落: {current_output_segment_id[0]}")
     
     yielded_count = 0
+    # 添加等待状态跟踪，避免重复日志
+    last_waited_segment = None
     
     # 处理队列中的音频块
     while audio_queue:
@@ -206,28 +208,62 @@ def yield_ready_audio_chunks(audio_queue, segment_order, current_output_segment_
             audio_queue.popleft()  # 从队列中移除
             yielded_count += 1
             yield (segment_id, chunk)
+            # 重置等待状态
+            last_waited_segment = None
         else:
-            # 不是当前段落的块，记录等待状态
+            # 不是当前段落的块，检查是否需要跳过当前段落
             if not force_all:
-                logging.info(f"等待当前段落 {current_output_segment_id[0]} 完成，队首段落: {segment_id}")
+                # 检查当前段落是否应该被跳过
+                should_skip_current = False
+                
+                if pending_tts_tasks is not None and current_output_segment_id[0] not in pending_tts_tasks:
+                    # 当前段落的TTS已经完成但没有音频块，可能失败了
+                    should_skip_current = True
+                    logging.warning(f"当前段落 {current_output_segment_id[0]} 的TTS已完成但没有音频块，跳过该段落")
+                elif segment_order and current_output_segment_id[0] in segment_order:
+                    # 检查队首段落是否在当前段落之后
+                    current_idx = segment_order.index(current_output_segment_id[0])
+                    if segment_id in segment_order:
+                        queue_head_idx = segment_order.index(segment_id)
+                        if queue_head_idx > current_idx:
+                            # 队首段落在当前段落之后，说明当前段落可能已经失败
+                            should_skip_current = True
+                            logging.warning(f"检测到段落顺序异常，跳过当前段落 {current_output_segment_id[0]}，队首段落: {segment_id}")
+                
+                if should_skip_current:
+                    # 跳过当前段落，移动到下一个
+                    _skip_to_next_segment(segment_order, current_output_segment_id)
+                    last_waited_segment = None
+                    continue  # 重新开始循环，用新的当前段落ID检查
+                else:
+                    # 正常等待，记录等待状态（但避免重复记录）
+                    if last_waited_segment != segment_id:
+                        logging.info(f"等待当前段落 {current_output_segment_id[0]} 完成，队首段落: {segment_id}")
+                        last_waited_segment = segment_id
             break
         
         # 如果当前段落的所有块都已输出，并且队列为空或队首是新段落
         if not audio_queue or audio_queue[0][0] != current_output_segment_id[0]:
             # 移动到下一个段落
-            if segment_order and current_output_segment_id[0] in segment_order:
-                idx = segment_order.index(current_output_segment_id[0])
-                if idx + 1 < len(segment_order):
-                    old_segment_id = current_output_segment_id[0]
-                    current_output_segment_id[0] = segment_order[idx + 1]
-                    logging.info(f"切换到下一个段落: {old_segment_id} -> {current_output_segment_id[0]}")
-                else:
-                    logging.info(f"当前段落 {current_output_segment_id[0]} 是最后一个段落")
+            _skip_to_next_segment(segment_order, current_output_segment_id)
+            # 重置等待状态，因为切换了段落
+            last_waited_segment = None
     
     if yielded_count > 0:
         logging.info(f"本次输出了 {yielded_count} 个音频块，剩余队列长度: {len(audio_queue)}")
     
     return None
+
+def _skip_to_next_segment(segment_order, current_output_segment_id):
+    """跳转到下一个段落的辅助函数"""
+    if segment_order and current_output_segment_id[0] in segment_order:
+        idx = segment_order.index(current_output_segment_id[0])
+        if idx + 1 < len(segment_order):
+            old_segment_id = current_output_segment_id[0]
+            current_output_segment_id[0] = segment_order[idx + 1]
+            logging.info(f"切换到下一个段落: {old_segment_id} -> {current_output_segment_id[0]}")
+        else:
+            logging.info(f"当前段落 {current_output_segment_id[0]} 是最后一个段落")
 
 def process_llm_stream(
     client, 
@@ -322,7 +358,7 @@ def process_llm_stream(
             )
             
             # 输出准备好的音频块，添加间隔控制
-            for output in yield_ready_audio_chunks(audio_queue, segment_order, current_output_segment_id):
+            for output in yield_ready_audio_chunks(audio_queue, segment_order, current_output_segment_id, pending_tts_tasks=pending_tts_tasks):
                 if isinstance(output, AdditionalOutputs):
                     yield output
                 else:
@@ -394,7 +430,7 @@ def process_llm_stream(
                     )
                     
                     # 立即输出就绪的音频块，添加间隔控制
-                    for output in yield_ready_audio_chunks(audio_queue, segment_order, current_output_segment_id):
+                    for output in yield_ready_audio_chunks(audio_queue, segment_order, current_output_segment_id, pending_tts_tasks=pending_tts_tasks):
                         if isinstance(output, AdditionalOutputs):
                             yield output
                         else:
@@ -508,7 +544,7 @@ def process_llm_stream(
         )
         
         # 输出准备好的音频块，添加间隔控制
-        for output in yield_ready_audio_chunks(audio_queue, segment_order, current_output_segment_id):
+        for output in yield_ready_audio_chunks(audio_queue, segment_order, current_output_segment_id, pending_tts_tasks=pending_tts_tasks):
             if isinstance(output, AdditionalOutputs):
                 yield output
             else:
