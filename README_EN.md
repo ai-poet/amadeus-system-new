@@ -29,6 +29,134 @@ Any form of contribution is very welcome. Let's make Amadeus System better toget
 
 For detailed documentation, please visit: [Amadeus System Documentation Center](https://docs.amadeus-web.top)
 
+## 🚀 Development Guide
+
+### Frontend Development Setup
+
+1. **Clone the project**
+   ```bash
+   git clone https://github.com/ai-poet/amadeus-system-new-alpha.git
+   cd amadeus-system-new-alpha
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Configure environment variables**
+   ```bash
+   # Copy environment file
+   cp .env.development.example .env.development
+   # Edit configuration file and fill in necessary environment variables
+   ```
+
+4. **Start development server**
+   ```bash
+   npm run dev
+   ```
+   
+   The application will start at `http://localhost:1002`
+
+### Backend Service Development
+
+1. **Navigate to service directory**
+   ```bash
+   cd service
+   ```
+
+2. **Install dependencies**
+   ```bash
+   pnpm install
+   ```
+
+3. **Configure environment variables**
+   ```bash
+   # Copy environment file
+   cp .env.example .env
+   # Edit configuration file and fill in necessary API keys
+   ```
+
+4. **Start development service**
+   ```bash
+   pnpm dev
+   ```
+
+### WebRTC Service Development (Python)
+
+1. **Navigate to WebRTC service directory**
+   ```bash
+   cd service/webrtc
+   ```
+
+2. **Create virtual environment**
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # Linux/Mac
+   # or venv\Scripts\activate  # Windows
+   ```
+
+3. **Install dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Configure environment variables**
+   ```bash
+   # Copy environment file
+   cp .env.example .env
+   # Edit configuration file and fill in necessary API keys
+   ```
+
+5. **Start WebRTC service**
+   ```bash
+   python server.py
+   ```
+   
+   The service will start at `http://localhost:8001`
+
+### Complete Development Workflow
+
+1. **Start all services simultaneously**
+   ```bash
+   # Terminal 1: Start frontend
+   npm run dev
+   
+   # Terminal 2: Start Node.js service
+   cd service && pnpm dev
+   
+   # Terminal 3: Start WebRTC service
+   cd service/webrtc && python server.py
+   ```
+
+2. **Code linting**
+   ```bash
+   # Frontend code linting
+   npm run lint
+   
+   # Backend service code linting
+   cd service && pnpm lint
+   ```
+
+3. **Build testing**
+   ```bash
+   # Build frontend
+   npm run build
+   
+   # Build backend service
+   cd service && pnpm build
+   
+   # Build Electron application
+   npm run build:electron
+   ```
+
+### Development Environment Requirements
+
+- **Node.js**: ≥ 18.0.0
+- **Python**: ≥ 3.8
+- **pnpm**: Recommended package manager
+- **Docker**: Optional, for containerized deployment
+
 ## Deployment Methods
 
 ### Download Local Client
@@ -217,3 +345,18 @@ After deployment is complete, you can fill in the TURN server information in the
 > **Tip**
 > 
 > After correctly configuring the TURN server, even in complex network environments (such as symmetric NAT, behind corporate firewalls), the stability of audio and video communication can be guaranteed.
+
+## 🙏 Acknowledgments
+
+Thanks to **Steins;Gate 0** for the creative inspiration
+
+Thanks to all open source projects and contributors
+
+Thanks to community users for their feedback and suggestions
+
+*"The universe has a beginning, but no end. — Infinite.  
+Stars, too, have their own beginnings, but their own power results in their destruction. — Finite.  
+It is those who possess wisdom who are the greatest fools. History has shown us this.  
+You could say that this is the final warning from God to those who resist."*
+
+— **Steins;Gate 0**

@@ -29,6 +29,134 @@
 
 详细的说明文档请访问：[Amadeus System 文档中心](https://docs.amadeus-web.top)
 
+## 🚀 开发步骤
+
+### 前端开发环境搭建
+
+1. **克隆项目**
+   ```bash
+   git clone https://github.com/ai-poet/amadeus-system-new-alpha.git
+   cd amadeus-system-new-alpha
+   ```
+
+2. **安装依赖**
+   ```bash
+   npm install
+   ```
+
+3. **配置环境变量**
+   ```bash
+   # 复制环境变量文件
+   cp .env.development.example .env.development
+   # 编辑配置文件，填入必要的环境变量
+   ```
+
+4. **启动开发服务器**
+   ```bash
+   npm run dev
+   ```
+   
+   应用将在 `http://localhost:1002` 启动
+
+### 后端服务开发
+
+1. **进入服务目录**
+   ```bash
+   cd service
+   ```
+
+2. **安装依赖**
+   ```bash
+   pnpm install
+   ```
+
+3. **配置环境变量**
+   ```bash
+   # 复制环境变量文件
+   cp .env.example .env
+   # 编辑配置文件，填入必要的API密钥
+   ```
+
+4. **启动开发服务**
+   ```bash
+   pnpm dev
+   ```
+
+### WebRTC服务开发（Python）
+
+1. **进入WebRTC服务目录**
+   ```bash
+   cd service/webrtc
+   ```
+
+2. **创建虚拟环境**
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # Linux/Mac
+   # 或 venv\Scripts\activate  # Windows
+   ```
+
+3. **安装依赖**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **配置环境变量**
+   ```bash
+   # 复制环境变量文件
+   cp .env.example .env
+   # 编辑配置文件，填入必要的API密钥
+   ```
+
+5. **启动WebRTC服务**
+   ```bash
+   python server.py
+   ```
+   
+   服务将在 `http://localhost:8001` 启动
+
+### 完整开发流程
+
+1. **同时启动所有服务**
+   ```bash
+   # 终端1: 启动前端
+   npm run dev
+   
+   # 终端2: 启动Node.js服务
+   cd service && pnpm dev
+   
+   # 终端3: 启动WebRTC服务
+   cd service/webrtc && python server.py
+   ```
+
+2. **代码检查**
+   ```bash
+   # 前端代码检查
+   npm run lint
+   
+   # 后端服务代码检查
+   cd service && pnpm lint
+   ```
+
+3. **构建测试**
+   ```bash
+   # 构建前端
+   npm run build
+   
+   # 构建后端服务
+   cd service && pnpm build
+   
+   # 构建Electron应用
+   npm run build:electron
+   ```
+
+### 开发环境要求
+
+- **Node.js**: ≥ 18.0.0
+- **Python**: ≥ 3.8
+- **pnpm**: 推荐使用pnpm作为包管理器
+- **Docker**: 可选，用于容器化部署
+
 ## 部署方法
 
 ### 下载本地客户端
@@ -217,3 +345,18 @@ FastRTC提供了一个自动化脚本，可在AWS上部署TURN服务器：
 > **提示**
 > 
 > 正确配置TURN服务器后，即使在复杂的网络环境（如对称NAT、企业防火墙后）也能保证音视频通信的稳定性。
+
+## 🙏 致谢
+
+感谢 **命运石之门 0** 提供的创意灵感
+
+感谢所有开源项目和贡献者
+
+感谢社区用户的反馈和建议
+
+*"The universe has a beginning, but no end. — Infinite.  
+Stars, too, have their own beginnings, but their own power results in their destruction. — Finite.  
+It is those who possess wisdom who are the greatest fools. History has shown us this.  
+You could say that this is the final warning from God to those who resist."*
+
+— **Steins;Gate 0**
