@@ -1,5 +1,9 @@
 # Amadeus System New Alpha
 
+> ⚠️ **此项目不再维护和更新，欢迎自行 fork 研究修改**
+>
+> 后续的更新内容将全部迁移到 [https://cyberspirit.io](https://cyberspirit.io)
+
 [English](README_EN.md) | 中文
 
 一个全新的Amadeus实验版本, EL PSY CONGROO~
